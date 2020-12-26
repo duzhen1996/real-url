@@ -2,6 +2,8 @@
 import hashlib
 import re
 import time
+import json
+import os 
 
 import execjs
 import requests
@@ -9,12 +11,12 @@ import requests
 
 class DouYu:
 
-    def __init__(self, rid):
+    def __init__(self, rid, rate = 3):
         # 房间号通常为1~7位纯数字，浏览器地址栏中看到的房间号不一定是真实rid.
         self.did = '10000000000000000000000000001501'
         self.t10 = str(int(time.time()))
         self.t13 = str(int((time.time() * 1000)))
-
+        self.rate = rate
         self.s = requests.Session()
         self.res = self.s.get('https://m.douyu.com/' + str(rid)).text
         result = re.search(r'rid":(\d{1,7}),"vipId', self.res)
@@ -70,9 +72,10 @@ class DouYu:
         res = self.s.post(url, params=params).text
         key = re.search(r'(\d{1,7}[0-9a-zA-Z]+)_?\d{0,4}(.m3u8|/playlist)', res).group(1)
 
+
         return key
 
-    def get_pc_js(self, cdn='ws-h5', rate=0):
+    def get_pc_js(self, cdn='ws-h5', rate=3):
         """
         通过PC网页端的接口获取完整直播源。
         :param cdn: 主线路ws-h5、备用线路tct-h5
@@ -98,7 +101,11 @@ class DouYu:
         params += '&cdn={}&rate={}'.format(cdn, rate)
         url = 'https://www.douyu.com/lapi/live/getH5Play/{}'.format(self.rid)
         res = self.s.post(url, params=params).json()
-
+        print("已复制到剪切板：")
+        video_link = res["data"]["rtmp_url"] + "/" + res["data"]["rtmp_live"]
+        os.system("echo '%s' | pbcopy" % video_link)
+        print(res["data"]["rtmp_url"] + "/" + res["data"]["rtmp_live"])
+        # print(res.type)
         return res
 
     def get_real_url(self):
@@ -116,5 +123,7 @@ class DouYu:
 
 if __name__ == '__main__':
     r = input('输入斗鱼直播间号：\n')
-    s = DouYu(r)
-    print(s.get_real_url())
+    rate = input('输入清晰度（1流畅；2高清；3超清；4蓝光4M；0蓝光8M或10M）：\n')
+    rate = int(rate)
+    s = DouYu(r, rate)
+    s.get_pc_js()

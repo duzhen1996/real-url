@@ -4,12 +4,14 @@
 # qn=400蓝光
 # qn=10000原画
 import requests
+import os
 
 
 class BiliBili:
 
-    def __init__(self, rid):
+    def __init__(self, rid, qn):
         self.rid = rid
+        self.qn = qn
 
     def get_real_url(self):
         # 先获取直播状态和真实房间号
@@ -26,7 +28,7 @@ class BiliBili:
                     f_url = 'https://api.live.bilibili.com/xlive/web-room/v1/playUrl/playUrl'
                     params = {
                         'cid': room_id,
-                        'qn': 10000,
+                        'qn': self.qn,
                         'platform': pf,
                         'https_url_req': 1,
                         'ptype': 16
@@ -38,9 +40,13 @@ class BiliBili:
                         return real_url
                     except KeyError or IndexError:
                         raise Exception('获取失败')
-
+                
+                video_link = u('web')
+                os.system("echo '%s' | pbcopy" % video_link)
+                print("已复制到剪切板：")
+                print(video_link)            
                 return {
-                    'flv_url': u('web'),
+                    'flv_url': video_link,
                     'hls_url': u('h5')
                 }
 
@@ -50,9 +56,9 @@ class BiliBili:
             raise Exception('房间不存在')
 
 
-def get_real_url(rid):
+def get_real_url(rid, qn):
     try:
-        bilibili = BiliBili(rid)
+        bilibili = BiliBili(rid, qn)
         return bilibili.get_real_url()
     except Exception as e:
         print('Exception：', e)
@@ -60,5 +66,7 @@ def get_real_url(rid):
 
 
 if __name__ == '__main__':
+    qn = [10000,150,150,250,400]
     r = input('请输入bilibili直播房间号：\n')
-    print(get_real_url(r))
+    rate = qn[int(input('输入清晰度（1流畅；2高清；3超清；4蓝光；0原画）：\n'))]
+    get_real_url(r,rate)
